@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VeggieLens — Identify any vegetable, in any language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1E241A;
+    --paper:#EEF1E3;
+    --paper-2:#E3E8D4;
+    --spinach:#3F6B34;
+    --spinach-dark:#2C4C24;
+    --turmeric:#E3A72B;
+    --tomato:#C1442D;
+    --brinjal:#5B3163;
+    --line: rgba(30,36,26,0.14);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    padding:28px 22px 18px;
+    background:var(--spinach-dark);
+    color:var(--paper);
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    right:-30px; top:-30px;
+    width:140px; height:140px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(227,167,43,0.35), transparent 70%);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    position:relative; z-index:1;
+  }
+  .brand svg{width:30px;height:30px;flex-shrink:0;}
+  .brand-name{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.01em;
+  }
+  .brand-name em{
+    font-style:normal;
+    color:var(--turmeric);
+  }
+  .tagline{
+    margin-top:6px;
+    font-size:13.5px;
+    opacity:0.82;
+    max-width:340px;
+    line-height:1.4;
+    position:relative; z-index:1;
+  }
+
+  /* ---------- TABS ---------- */
+  .tabs{
+    display:flex;
+    gap:8px;
+    padding:16px 20px 0;
+  }
+  .tab{
+    flex:1;
+    padding:11px 10px;
+    border-radius:999px;
+    border:1.5px solid var(--line);
+    background:transparent;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .tab svg{width:16px;height:16px;}
+  .tab.active{
+    background:var(--spinach);
+    border-color:var(--spinach);
+    color:var(--paper);
+  }
+
+  main{
+    flex:1;
+    padding:18px 20px 100px;
+  }
+
+  .panel{display:none;}
+  .panel.active{display:block; animation:fadeIn 0.25s ease;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- SCAN PANEL ---------- */
+  .scan-zone{
+    border:2px dashed rgba(30,36,26,0.3);
+    border-radius:18px;
+    padding:28px 18px;
+    text-align:center;
+    background:var(--paper-2);
+    position:relative;
+    min-height:200px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px;
+  }
+  .scan-zone img{
+    max-width:100%;
+    max-height:240px;
+    border-radius:12px;
+    object-fit:cover;
+  }
+  .scan-icon{
+    width:44px; height:44px;
+    color:var(--spinach);
+  }
+  .scan-zone p{
+    font-size:13.5px;
+    color:rgba(30,36,26,0.65);
+    max-width:260px;
+    line-height:1.4;
+    margin:0;
+  }
+  input[type=file]{display:none;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px 20px;
+    border-radius:12px;
+    border:none;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    cursor:pointer;
+    transition:transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{
+    background:var(--spinach);
+    color:var(--paper);
+    width:100%;
+    box-shadow:0 3px 0 var(--spinach-dark);
+  }
+  .btn-primary:disabled{opacity:0.55; box-shadow:none; cursor:default;}
+  .btn-ghost{
+    background:transparent;
+    color:var(--spinach-dark);
+    border:1.5px solid var(--line);
+  }
+  .row-btns{display:flex; gap:10px; margin-top:14px;}
+  .row-btns .btn{flex:1;}
+
+  .identify-btn{margin-top:16px;}
+
+  /* ---------- SEARCH PANEL ---------- */
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--paper-2);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .search-box svg{width:18px;height:18px; color:var(--spinach-dark); flex-shrink:0;}
+  .search-box input{
+    border:none; background:transparent; outline:none;
+    font-family:'Work Sans', sans-serif;
+    font-size:15px;
+    color:var(--ink);
+    width:100%;
+  }
+  .search-box input::placeholder{color:rgba(30,36,26,0.45);}
+  .hint{
+    font-size:12.5px;
+    color:rgba(30,36,26,0.55);
+    margin-top:8px;
+    line-height:1.4;
+  }
+
+  .quick-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:9px;
+    margin-top:18px;
+  }
+  .quick-chip{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 6px;
+    text-align:center;
+    font-size:12.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:background 0.15s ease;
+  }
+  .quick-chip:active{background:#d9dfc5;}
+  .section-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:rgba(30,36,26,0.5);
+    margin:20px 0 4px;
+  }
+
+  /* ---------- LANGUAGE BAR ---------- */
+  .lang-bar{
+    margin-top:18px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    background:var(--paper-2);
+    border-radius:12px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+  }
+  .lang-bar svg{width:16px;height:16px;color:var(--brinjal); flex-shrink:0;}
+  .lang-bar input{
+    flex:1;
+    border:none; background:transparent; outline:none;
+    font-family:'Work Sans', sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .lang-bar input::placeholder{color:rgba(30,36,26,0.4);}
+  .lang-go{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:500;
+    background:var(--brinjal);
+    color:var(--paper);
+    border:none;
+    border-radius:8px;
+    padding:6px 10px;
+    cursor:pointer;
+  }
+
+  /* ---------- RESULT TAG CARD ---------- */
+  .result-wrap{margin-top:22px;}
+  .tag-card{
+    background:#fff;
+    border-radius:4px 16px 16px 16px;
+    border:1.5px solid var(--ink);
+    padding:22px 20px 20px;
+    position:relative;
+    box-shadow:5px 5px 0 var(--turmeric);
+    animation:popIn 0.32s cubic-bezier(.2,.8,.3,1.2);
+  }
+  @keyframes popIn{ from{opacity:0; transform:translateY(10px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+  .tag-hole{
+    position:absolute;
+    top:-11px; left:22px;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--paper);
+    border:1.5px solid var(--ink);
+  }
+  .tag-hole::after{
+    content:"";
+    position:absolute;
+    inset:5px;
+    border-radius:50%;
+    background:var(--ink);
+    opacity:0.15;
+  }
+  .tag-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--tomato);
+    margin-bottom:6px;
+  }
+  .tag-name{
+    font-family:'Fraunces', serif;
+    font-size:28px;
+    font-weight:600;
+    line-height:1.1;
+    margin-bottom:2px;
+  }
+  .tag-sci{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    font-style:italic;
+    color:rgba(30,36,26,0.55);
+    margin-bottom:14px;
+  }
+  .name-list{list-style:none; margin:0; padding:0;}
+  .name-list li{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:8px 0;
+    border-top:1px solid var(--line);
+    gap:10px;
+  }
+  .name-lang{
+    font-size:12px;
+    color:rgba(30,36,26,0.6);
+    font-weight:500;
+    flex-shrink:0;
+  }
+  .name-value{
+    font-size:16px;
+    font-weight:600;
+    text-align:right;
+  }
+  .translated-box{
+    margin-top:14px;
+    background:var(--paper-2);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .translated-box .name-lang{color:var(--brinjal);}
+  .translated-box .name-value{font-size:19px; color:var(--brinjal);}
+  .tag-desc{
+    margin-top:14px;
+    font-size:13.5px;
+    line-height:1.55;
+    color:rgba(30,36,26,0.82);
+    padding-top:12px;
+    border-top:1px solid var(--line);
+  }
+
+  /* ---------- LOADING / ERROR ---------- */
+  .status{
+    margin-top:18px;
+    display:flex; align-items:center; gap:10px;
+    font-size:13.5px;
+    color:rgba(30,36,26,0.65);
+  }
+  .spinner{
+    width:16px;height:16px;
+    border-radius:50%;
+    border:2px solid rgba(30,36,26,0.2);
+    border-top-color:var(--spinach);
+    animation:spin 0.7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{
+    margin-top:18px;
+    background:#fbe9e5;
+    border:1px solid var(--tomato);
+    color:#7a2c1c;
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.4;
+  }
+
+  footer{
+    text-align:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:rgba(30,36,26,0.4);
+    padding:16px 20px 26px;
+    letter-spacing:0.03em;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C9 2 6.5 4.5 6.5 8c0 2 .8 3.6 2 5-2.8.6-4.5 2.9-4.5 6 0 .5.05 1 .15 1.5.4-.3.9-.5 1.35-.5 1 0 1.5.6 2.5.6.6 0 1-.2 1.4-.5.5 1 1.6 1.6 2.6 1.6s2.1-.6 2.6-1.6c.4.3.8.5 1.4.5 1 0 1.5-.6 2.5-.6.45 0 .95.2 1.35.5.1-.5.15-1 .15-1.5 0-3.1-1.7-5.4-4.5-6 1.2-1.4 2-3 2-5C17.5 4.5 15 2 12 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 8.5V2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span class="brand-name">Veggie<em>Lens</em></span>
+    </div>
+    <p class="tagline">Point your camera at any vegetable — get its name in Hindi, your mother tongue, or any language you type.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg>
+      Scan
+    </button>
+    <button class="tab" data-tab="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      Search
+    </button>
+  </div>
+
+  <main>
+
+    <!-- SCAN PANEL -->
+    <section class="panel active" id="panel-scan">
+      <div class="scan-zone" id="scanZone">
+        <svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg>
+        <p>Take a photo of a vegetable, or upload one from your gallery.</p>
+        <div class="row-btns">
+          <button class="btn btn-primary" id="btnCamera">Open camera</button>
+          <button class="btn btn-ghost" id="btnGallery">Gallery</button>
+        </div>
+      </div>
+      <input type="file" id="fileCamera" accept="image/*" capture="environment">
+      <input type="file" id="fileGallery" accept="image/*">
+
+      <button class="btn btn-primary identify-btn" id="btnIdentify" style="display:none;">Identify this vegetable</button>
+
+      <div class="lang-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h7M9 3v2M7 5c0 4 3 7 6 9M13 5c-.6 2.3-2 4.4-4 6M14 21l4-9 4 9M15.5 18h5"/></svg>
+        <input type="text" id="langInputScan" placeholder="Also show name in… (e.g. Tamil, Spanish, বাংলা)">
+      </div>
+
+      <div id="statusScan"></div>
+      <div id="resultScan" class="result-wrap"></div>
+    </section>
+
+    <!-- SEARCH PANEL -->
+    <section class="panel" id="panel-search">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Type a vegetable name, any language…">
+      </div>
+      <p class="hint">Works with names in any script — try "baingan", "lauki", "okra", "கத்தரிக்காய்", or "courgette".</p>
+
+      <div class="lang-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h7M9 3v2M7 5c0 4 3 7 6 9M13 5c-.6 2.3-2 4.4-4 6M14 21l4-9 4 9M15.5 18h5"/></svg>
+        <input type="text" id="langInputSearch" placeholder="Also show name in… (e.g. Tamil, Spanish, বাংলা)">
+      </div>
+
+      <div class="section-label">Popular in Indian kitchens</div>
+      <div class="quick-grid" id="quickGrid"></div>
+
+      <div id="statusSearch"></div>
+      <div id="resultSearch" class="result-wrap"></div>
+    </section>
+
+  </main>
+
+  <footer>VEGGIELENS · PHOTO ID + TRANSLATION, ANY LANGUAGE</footer>
+</div>
+
+<script>
+const QUICK_ITEMS = ["Brinjal","Bottle gourd","Okra","Bitter gourd","Drumstick","Colocasia","Ridge gourd","Fenugreek","Taro root"];
+const grid = document.getElementById('quickGrid');
+QUICK_ITEMS.forEach(name=>{
+  const chip = document.createElement('div');
+  chip.className = 'quick-chip';
+  chip.textContent = name;
+  chip.onclick = ()=>{ document.getElementById('searchInput').value = name; runSearch(); };
+  grid.appendChild(chip);
+});
+
+// ---------- TABS ----------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+// ---------- SCAN LOGIC ----------
+let currentImageBase64 = null;
+let currentImageMedia = null;
+
+const scanZone = document.getElementById('scanZone');
+const fileCamera = document.getElementById('fileCamera');
+const fileGallery = document.getElementById('fileGallery');
+const btnIdentify = document.getElementById('btnIdentify');
+
+document.getElementById('btnCamera').onclick = ()=> fileCamera.click();
+document.getElementById('btnGallery').onclick = ()=> fileGallery.click();
+
+fileCamera.onchange = e => handleFile(e.target.files[0]);
+fileGallery.onchange = e => handleFile(e.target.files[0]);
+
+function handleFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const dataUrl = reader.result;
+    currentImageBase64 = dataUrl.split(',')[1];
+    currentImageMedia = file.type || 'image/jpeg';
+    scanZone.innerHTML = `<img src="${dataUrl}" alt="Selected vegetable photo">`;
+    btnIdentify.style.display = 'inline-flex';
+    document.getElementById('resultScan').innerHTML = '';
+    document.getElementById('statusScan').innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+btnIdentify.onclick = ()=> identifyPhoto();
+
+async function identifyPhoto(){
+  if(!currentImageBase64) return;
+  const statusEl = document.getElementById('statusScan');
+  const resultEl = document.getElementById('resultScan');
+  const extraLang = document.getElementById('langInputScan').value.trim();
+  btnIdentify.disabled = true;
+  resultEl.innerHTML = '';
+  statusEl.innerHTML = `<div class="status"><div class="spinner"></div> Looking closely at the photo…</div>`;
+
+  const langLine = extraLang
+    ? `Also include its name translated into "${extraLang}" (native script), as a field called "translated".`
+    : `Leave the "translated" field null.`;
+
+  const prompt = `You are a vegetable identification expert with deep knowledge of Indian regional produce as well as international vegetables.
+Look at the photo and identify the vegetable shown.
+Respond with ONLY a raw JSON object, no markdown fences, no preamble, in exactly this shape:
+{
+  "found": true,
+  "english_name": "string",
+  "scientific_name": "string",
+  "hindi_name": "string (Devanagari script)",
+  "regional_names": [{"language":"string","name":"string (native script)"}]  // 3-5 entries from different Indian regional languages (Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi - pick a relevant diverse set),
+  "international_names": [{"language":"string","name":"string (native script)"}] // 2-3 entries from major world languages e.g. Spanish, French, Chinese, Japanese, Arabic,
+  "translated": {"language":"string","name":"string (native script)"} or null,
+  "description": "1-2 sentence friendly description covering how it's typically used in cooking, max 45 words"
+}
+If the photo does not clearly show a vegetable, respond with {"found": false, "message": "short explanation"}.
+${langLine}`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: currentImageMedia, data: currentImageBase64 } },
+            { type: "text", text: prompt }
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const text = (data.content || []).map(b=>b.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    statusEl.innerHTML = '';
+    renderResult(parsed, resultEl);
+  }catch(err){
+    statusEl.innerHTML = '';
+    resultEl.innerHTML = `<div class="error-box">Couldn't identify that photo right now. Please try again with a clearer, well-lit shot of the vegetable.</div>`;
+  }finally{
+    btnIdentify.disabled = false;
+  }
+}
+
+// ---------- SEARCH LOGIC ----------
+let searchTimer = null;
+document.getElementById('searchInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') runSearch();
+});
+
+async function runSearch(){
+  const query = document.getElementById('searchInput').value.trim();
+  if(!query) return;
+  const statusEl = document.getElementById('statusSearch');
+  const resultEl = document.getElementById('resultSearch');
+  const extraLang = document.getElementById('langInputSearch').value.trim();
+  resultEl.innerHTML = '';
+  statusEl.innerHTML = `<div class="status"><div class="spinner"></div> Searching…</div>`;
+
+  const langLine = extraLang
+    ? `Also include its name translated into "${extraLang}" (native script), as a field called "translated".`
+    : `Leave the "translated" field null.`;
+
+  const prompt = `You are a vegetable identification expert with deep knowledge of Indian regional produce as well as international vegetables.
+The user typed: "${query}" — this could be in English, Hindi, Hinglish, or any regional Indian or world language, and may be misspelled. Figure out which vegetable they mean.
+Respond with ONLY a raw JSON object, no markdown fences, no preamble, in exactly this shape:
+{
+  "found": true,
+  "english_name": "string",
+  "scientific_name": "string",
+  "hindi_name": "string (Devanagari script)",
+  "regional_names": [{"language":"string","name":"string (native script)"}] // 3-5 entries from different Indian regional languages,
+  "international_names": [{"language":"string","name":"string (native script)"}] // 2-3 entries from major world languages,
+  "translated": {"language":"string","name":"string (native script)"} or null,
+  "description": "1-2 sentence friendly description covering how it's typically used in cooking, max 45 words"
+}
+If you cannot confidently match this to a real vegetable, respond with {"found": false, "message": "short explanation"}.
+${langLine}`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const text = (data.content || []).map(b=>b.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    statusEl.innerHTML = '';
+    renderResult(parsed, resultEl);
+  }catch(err){
+    statusEl.innerHTML = '';
+    resultEl.innerHTML = `<div class="error-box">Couldn't find that one. Try a different spelling or another name for it.</div>`;
+  }
+}
+
+// ---------- RENDER ----------
+function renderResult(parsed, container){
+  if(!parsed || parsed.found === false){
+    container.innerHTML = `<div class="error-box">${(parsed && parsed.message) || "Couldn't identify a vegetable here. Try another photo or search term."}</div>`;
+    return;
+  }
+  const regionalRows = (parsed.regional_names||[]).map(r=>
+    `<li><span class="name-lang">${escapeHtml(r.language)}</span><span class="name-value">${escapeHtml(r.name)}</span></li>`
+  ).join('');
+  const intlRows = (parsed.international_names||[]).map(r=>
+    `<li><span class="name-lang">${escapeHtml(r.language)}</span><span class="name-value">${escapeHtml(r.name)}</span></li>`
+  ).join('');
+
+  const translatedBox = parsed.translated
+    ? `<div class="translated-box name-list">
+         <li style="border-top:none; padding:0;">
+           <span class="name-lang">${escapeHtml(parsed.translated.language)}</span>
+           <span class="name-value">${escapeHtml(parsed.translated.name)}</span>
+         </li>
+       </div>`
+    : '';
+
+  container.innerHTML = `
+    <div class="tag-card">
+      <div class="tag-hole"></div>
+      <div class="tag-eyebrow">Identified</div>
+      <div class="tag-name">${escapeHtml(parsed.english_name||'')}</div>
+      <div class="tag-sci">${escapeHtml(parsed.scientific_name||'')}</div>
+      <ul class="name-list">
+        <li><span class="name-lang">Hindi</span><span class="name-value">${escapeHtml(parsed.hindi_name||'')}</span></li>
+        ${regionalRows}
+        ${intlRows}
+      </ul>
+      ${translatedBox}
+      <div class="tag-desc">${escapeHtml(parsed.description||'')}</div>
+    </div>
+  `;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str==null ? '' : String(str);
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
